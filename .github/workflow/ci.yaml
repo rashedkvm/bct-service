@@ -17,12 +17,14 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
-      - name: Generate
+
+      - name: Build
         run: |
           set -o errexit
           set -o nounset
           set -o pipefail
           
           make build
+
       - name: Test
         run: make test
