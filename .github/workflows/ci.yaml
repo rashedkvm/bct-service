@@ -7,9 +7,10 @@ on:
       - '!dependabot/**'
     tags:
       - '**'
-  pull_request: {}
+  pull_request: []
 
 jobs:
+
   unit:
     runs-on: ubuntu-latest
     steps:
