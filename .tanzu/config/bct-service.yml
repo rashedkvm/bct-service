@@ -1,0 +1,15 @@
+apiVersion: apps.tanzu.vmware.com/v1
+kind: ContainerApp
+metadata:
+  creationTimestamp: null
+  name: bct-service
+spec:
+  build:
+    buildpacks: {}
+    path: ../..
+  ports:
+  - name: main
+    port: 8080
+  nonSecretEnv:
+  - name: PORT
+    value: "8080"
