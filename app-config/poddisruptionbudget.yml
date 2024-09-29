@@ -1,0 +1,15 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  creationTimestamp: null
+  name: bct-service
+spec:
+  maxUnavailable: 10%
+  selector:
+    matchLabels:
+      containerapp.apps.tanzu.vmware.com/app-name: bct-service
+status:
+  currentHealthy: 0
+  desiredHealthy: 0
+  disruptionsAllowed: 0
+  expectedPods: 0

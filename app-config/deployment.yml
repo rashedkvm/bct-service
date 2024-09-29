@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  name: bct-service
+spec:
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      containerapp.apps.tanzu.vmware.com/app-name: bct-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 10%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        containerapp.apps.tanzu.vmware.com/content-summary: git:e9873b1 @ 2024-09-29T01:03:27Z
+        kubectl.kubernetes.io/default-container: main
+      creationTimestamp: null
+      labels:
+        containerapp.apps.tanzu.vmware.com/app-name: bct-service
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - env:
+        - name: PORT
+          value: "8080"
+        image: rkamaldocker/bct-service@sha256:e7d3865f0b9fe60cd18db6498de8cc3aff1338f95c8bfb9ae65a859eaa649577
+        imagePullPolicy: IfNotPresent
+        name: main
+        ports:
+        - containerPort: 8080
+          name: main
+          protocol: TCP
+        resources:
+          limits:
+            memory: 1Gi
+          requests:
+            cpu: 300m
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /tmp
+          name: tanzu-tmp
+      enableServiceLinks: false
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: bct-service
+      terminationGracePeriodSeconds: 300
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            containerapp.apps.tanzu.vmware.com/app-name: bct-service
+        matchLabelKeys:
+        - pod-template-hash
+        maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+      - labelSelector:
+          matchLabels:
+            containerapp.apps.tanzu.vmware.com/app-name: bct-service
+        matchLabelKeys:
+        - pod-template-hash
+        maxSkew: 1
+        topologyKey: topology.kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+      volumes:
+      - emptyDir: {}
+        name: tanzu-tmp
+status: {}
