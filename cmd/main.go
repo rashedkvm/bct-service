@@ -38,7 +38,7 @@ func setupRouter() *gin.Engine {
 	{
 		api.GET("/healthz", healthz)
 		api.POST("/ping", PongHandler)
-		api.POST("/upload", uploadReportHandler)
+		api.POST("/upload", reportHandler)
 	}
 
 	return router
@@ -61,7 +61,7 @@ func PongHandler(c *gin.Context) {
 	})
 }
 
-func uploadReportHandler(c *gin.Context) {
+func reportHandler(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 	// single file
 	file, _ := c.FormFile("file")
