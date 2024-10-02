@@ -30,7 +30,7 @@ tidy: ## Run go mod tidy
 .PHONY: build
 build: fmt vet tidy ## Builds the binary under bin folder
 	mkdir -p "bin"
-	go build -o bin/bct-service
+	go build -o bin/bct-service cmd/main.go
 
 .PHONY: test
 test: fmt vet ## Run unit tests only.

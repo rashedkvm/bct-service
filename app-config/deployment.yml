@@ -27,7 +27,7 @@ spec:
       - env:
         - name: PORT
           value: "8080"
-        image: rkamaldocker/bct-service@sha256:e7d3865f0b9fe60cd18db6498de8cc3aff1338f95c8bfb9ae65a859eaa649577
+        image: ko://github.com/rashedkvm/cmd
         imagePullPolicy: IfNotPresent
         name: main
         ports:
