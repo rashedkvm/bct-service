@@ -1,4 +1,4 @@
-module rashedkvm/bct-service
+module github.com/rashedkvm/bct-service
 
 go 1.23.1
 
