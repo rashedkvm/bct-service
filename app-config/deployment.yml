@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   name: bct-service
+  namespace: bct-service
 spec:
   revisionHistoryLimit: 1
   selector:
@@ -27,7 +28,7 @@ spec:
       - env:
         - name: PORT
           value: "8080"
-        image: ko://github.com/rashedkvm/cmd
+        image: ko://github.com/rashedkvm/bct-service/cmd
         imagePullPolicy: IfNotPresent
         name: main
         ports:

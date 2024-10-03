@@ -3,6 +3,7 @@ kind: PodDisruptionBudget
 metadata:
   creationTimestamp: null
   name: bct-service
+  namespace: bct-service
 spec:
   maxUnavailable: 10%
   selector:
