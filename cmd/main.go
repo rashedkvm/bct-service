@@ -103,6 +103,18 @@ func reportHandler(c *gin.Context) {
 
 }
 
+type Hyperlink struct {
+	URL  string `json:"url"`
+	Verb string `json:"verb"`
+}
+
+type UploadDocumentResponse struct {
+	Name         string    `json:"name"`
+	DocumentID   string    `json:"documentId"`
+	ErrorMessage string    `json:"errorMsg"`
+	DownloadLink Hyperlink `json:"downloadHyperlink"`
+}
+
 func graphqlHandler(c *gin.Context) {
 	etag := requestid.Get(c)
 	// Get the request body
@@ -131,9 +143,16 @@ func graphqlHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":           "ok",
-		"etag":             etag,
-		"graphql-response": "{}",
+		"status": "ok",
+		"etag":   etag,
+		"graphql-response": UploadDocumentResponse{
+			Name:       etag,
+			DocumentID: etag,
+			DownloadLink: Hyperlink{
+				URL:  fmt.Sprintf("%s/graphql", dst),
+				Verb: "post",
+			},
+		},
 	})
 }
 
