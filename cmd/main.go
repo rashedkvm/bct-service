@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/gin-contrib/requestid"
@@ -30,6 +32,11 @@ func main() {
 }
 
 func setupRouter() *gin.Engine {
+	// Logging to a file.
+	logFile := dst + "/api.log"
+	f, _ := os.Create(logFile)
+	gin.DefaultWriter = io.MultiWriter(f, os.Stdout)
+
 	router := gin.Default()
 	router.Use(requestid.New())
 
@@ -39,6 +46,7 @@ func setupRouter() *gin.Engine {
 		api.GET("/healthz", healthz)
 		api.POST("/ping", PongHandler)
 		api.POST("/upload", reportHandler)
+		api.POST("/graphql", graphqlHandler)
 	}
 
 	return router
@@ -93,4 +101,58 @@ func reportHandler(c *gin.Context) {
 		"file":   fmt.Sprintf("'%s' uploaded!", destination),
 	})
 
+}
+
+func graphqlHandler(c *gin.Context) {
+	etag := requestid.Get(c)
+	// Get the request body
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read request body"})
+		return
+	}
+	err = writeToFile(path.Join(dst, fmt.Sprintf("body-%v.txt", etag)), body)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write headers to file"})
+		return
+	}
+
+	// Get the request headers
+	headers := c.Request.Header
+
+	// Write the headers and body to a file
+	err = writeToFile(path.Join(dst, fmt.Sprintf("header-%v.txt", etag)), headers)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write headers to file"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":           "ok",
+		"etag":             etag,
+		"graphql-response": "{}",
+	})
+}
+
+func writeToFile(filename string, data interface{}) error {
+	var bytes []byte
+
+	switch data.(type) {
+	case []byte:
+		bytes = data.([]byte)
+		log.Printf("%s: %v", filename, string(bytes))
+	case http.Header:
+		var headerString string
+		for key, values := range data.(http.Header) {
+			headerString += fmt.Sprintf("%s: %s\n", key, values[0])
+		}
+		bytes = []byte(headerString)
+	default:
+		return fmt.Errorf("Unsupported data type: %T", data)
+	}
+
+	return os.WriteFile(filename, bytes, 0644)
 }
