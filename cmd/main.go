@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
+	"github.com/rashedkvm/bct-service/pkg/graphql"
 )
 
 const (
@@ -47,6 +49,9 @@ func setupRouter() *gin.Engine {
 		api.POST("/ping", PongHandler)
 		api.POST("/upload", reportHandler)
 		api.POST("/graphql", graphqlHandler)
+		api.POST("/local/graphql", graphqlLocalHandler)
+		api.POST("/data", documentHandler)
+		api.POST("/data/document/upload", documentHandler)
 	}
 
 	return router
@@ -103,75 +108,78 @@ func reportHandler(c *gin.Context) {
 
 }
 
-type Hyperlink struct {
-	URL  string `json:"url"`
-	Verb string `json:"verb"`
-}
+func documentHandler(c *gin.Context) {
+	log.Println(c.Request.URL)
+	c.Header("Content-Type", "application/json")
+	requestContentType := c.Request.Header.Get("Content-Type")
 
-type UploadDocumentResponse struct {
-	Name         string    `json:"name"`
-	DocumentID   string    `json:"documentId"`
-	ErrorMessage string    `json:"errorMsg"`
-	DownloadLink Hyperlink `json:"downloadHyperlink"`
-}
+	multipartFormData := strings.Split(requestContentType, ";")
 
-func graphqlHandler(c *gin.Context) {
-	etag := requestid.Get(c)
-	// Get the request body
-	body, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read request body"})
-		return
-	}
-	err = writeToFile(path.Join(dst, fmt.Sprintf("body-%v.txt", etag)), body)
-	if err != nil {
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write headers to file"})
-		return
-	}
-
-	// Get the request headers
-	headers := c.Request.Header
-
-	// Write the headers and body to a file
-	err = writeToFile(path.Join(dst, fmt.Sprintf("header-%v.txt", etag)), headers)
-	if err != nil {
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write headers to file"})
-		return
+	if len(multipartFormData) > 0 && multipartFormData[0] == "multipart/form-data" {
+		log.Println(multipartFormData)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "ok",
-		"etag":   etag,
-		"graphql-response": UploadDocumentResponse{
-			Name:       etag,
-			DocumentID: etag,
-			DownloadLink: Hyperlink{
-				URL:  fmt.Sprintf("%s/graphql", dst),
-				Verb: "post",
-			},
-		},
 	})
 }
 
-func writeToFile(filename string, data interface{}) error {
+func graphqlHandler(c *gin.Context) {
+	etag := requestid.Get(c)
+	writeError := writeHttpRequestToFile(path.Join(dst, fmt.Sprintf("request-%v.txt", etag)), c.Request)
+	if writeError != nil {
+		log.Println(writeError)
+	}
+
+	c.JSON(http.StatusOK, UploadDocumentResponseLocal(`http://bct-service.bct-service.svc.cluster.local:8080/api/graphql`))
+}
+
+func graphqlLocalHandler(c *gin.Context) {
+	etag := requestid.Get(c)
+	writeError := writeHttpRequestToFile(path.Join(dst, fmt.Sprintf("request-%v.txt", etag)), c.Request)
+	if writeError != nil {
+		log.Println(writeError)
+	}
+
+	c.JSON(http.StatusOK, UploadDocumentResponseLocal(`http://0.0.0.0:8080/api/graphql/local`))
+}
+
+func UploadDocumentResponseLocal(url string) *graphql.Response {
+	return &graphql.Response{
+		Errors: nil,
+		Data: graphql.Data{
+			DocumentQuery: graphql.DocumentQuery{
+				GenerateUploadHyperlink: graphql.Hyperlink{
+					Verb: http.MethodPost,
+					URL:  url,
+				},
+			},
+		},
+	}
+}
+
+func writeHttpRequestToFile(filename string, req *http.Request) error {
+	if req == nil {
+		return nil
+	}
 	var bytes []byte
 
-	switch data.(type) {
-	case []byte:
-		bytes = data.([]byte)
-		log.Printf("%s: %v", filename, string(bytes))
-	case http.Header:
-		var headerString string
-		for key, values := range data.(http.Header) {
-			headerString += fmt.Sprintf("%s: %s\n", key, values[0])
-		}
-		bytes = []byte(headerString)
-	default:
-		return fmt.Errorf("Unsupported data type: %T", data)
+	// header
+	var hdr = []byte("****header****")
+	bytes = append(bytes, hdr...)
+	for key, values := range req.Header {
+		bytes = append(bytes, []byte(fmt.Sprintf("%s: %s", key, values[0]))...)
 	}
+
+	// body
+	var bodyHdr = []byte("****body*****")
+	bytes = append(bytes, bodyHdr...)
+
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		return err
+	}
+	bytes = append(bytes, body...)
 
 	return os.WriteFile(filename, bytes, 0644)
 }
