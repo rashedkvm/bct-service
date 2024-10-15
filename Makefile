@@ -82,6 +82,10 @@ build: fmt vet tidy ## Builds the binary under bin folder
 	mkdir -p "bin"
 	go build -o bin/bct-service cmd/main.go
 
+.PHONY: run
+run: vet tidy ## Runs the service in command line
+	go run cmd/main.go
+
 .PHONY: test
 test: fmt vet ## Run unit tests only.
 	go test ./... -short -coverprofile cover.out
