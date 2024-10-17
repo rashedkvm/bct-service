@@ -21,3 +21,13 @@ type Hyperlink struct {
 type Errors struct {
 	Message string `json:"message"`
 }
+
+type UpdateBuildRunRequest struct {
+	Query     string `json:"query"`
+	Variables `json:"variables"`
+}
+
+type Variables struct {
+	ID    string `json:"ID"`
+	STATE string `json:"STATE"`
+}

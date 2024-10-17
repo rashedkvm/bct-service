@@ -126,7 +126,7 @@ func documentHandler(c *gin.Context) {
 
 func graphqlHandler(c *gin.Context) {
 	etag := requestid.Get(c)
-	writeError := writeHttpRequestToFile(path.Join(dst, fmt.Sprintf("request-%v.txt", etag)), c.Request)
+	writeError := writeHttpRequestToFile(etag, c.Request)
 	if writeError != nil {
 		log.Println(writeError)
 	}
@@ -136,7 +136,7 @@ func graphqlHandler(c *gin.Context) {
 
 func graphqlLocalHandler(c *gin.Context) {
 	etag := requestid.Get(c)
-	writeError := writeHttpRequestToFile(path.Join(dst, fmt.Sprintf("request-%v.txt", etag)), c.Request)
+	writeError := writeHttpRequestToFile(etag, c.Request)
 	if writeError != nil {
 		log.Println(writeError)
 	}
@@ -158,21 +158,21 @@ func UploadDocumentResponseLocal(url string) *graphql.Response {
 	}
 }
 
-func writeHttpRequestToFile(filename string, req *http.Request) error {
+func writeHttpRequestToFile(etag string, req *http.Request) error {
 	if req == nil {
 		return nil
 	}
 	var bytes []byte
 
 	// header
-	var hdr = []byte("****header****")
+	var hdr = []byte("****header****\n")
 	bytes = append(bytes, hdr...)
 	for key, values := range req.Header {
 		bytes = append(bytes, []byte(fmt.Sprintf("%s: %s", key, values[0]))...)
 	}
 
 	// body
-	var bodyHdr = []byte("****body*****")
+	var bodyHdr = []byte("****body*****\n\n")
 	bytes = append(bytes, bodyHdr...)
 
 	body, err := io.ReadAll(req.Body)
@@ -181,5 +181,14 @@ func writeHttpRequestToFile(filename string, req *http.Request) error {
 	}
 	bytes = append(bytes, body...)
 
-	return os.WriteFile(filename, bytes, 0644)
+	var brr = graphql.UpdateBuildRunRequest{}
+	if err := brr.Parse(body); err != nil {
+		return err
+	}
+	if strings.Contains(brr.Query, "mutation UpdateBuildRun") {
+		log.Println(string(bytes))
+		return os.WriteFile(path.Join(dst, fmt.Sprintf("update-build-run_%s.txt", etag)), bytes, 0644)
+	}
+
+	return os.WriteFile(path.Join(dst, fmt.Sprintf("request_%s.txt", etag)), bytes, 0644)
 }
