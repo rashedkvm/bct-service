@@ -141,7 +141,7 @@ func graphqlLocalHandler(c *gin.Context) {
 		log.Println(writeError)
 	}
 
-	c.JSON(http.StatusOK, UploadDocumentResponseLocal(`http://0.0.0.0:8080/api/graphql/local`))
+	c.JSON(http.StatusOK, UploadDocumentResponseLocal(`http://0.0.0.0:8080/api/local/graphql`))
 }
 
 func UploadDocumentResponseLocal(url string) *graphql.Response {
