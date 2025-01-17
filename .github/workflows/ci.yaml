@@ -41,7 +41,10 @@ jobs:
       run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
     - name: Additional tag
       id: additional_tag
-      uses: cardinalby/git-tag-action@master
-      env:
-        TAG: "test/${{ steps.get_version.outputs.VERSION }}"
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -o errexit
+        set -o nounset
+        set -o pipefail
+        
+        git tag test/${{ steps.get_version.outputs.VERSION }}
+        git push origin test/${{ steps.get_version.outputs.VERSION }}
