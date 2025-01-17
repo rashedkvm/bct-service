@@ -50,7 +50,7 @@ jobs:
         draft: true
     - name: Additional tag
       id: additional_tag
-      uses: actions/git-tag-actio@v1
+      uses: actions/git-tag-action@v1
       env:
         TAG: "test/${{ steps.get_version.outputs.VERSION }}"
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
