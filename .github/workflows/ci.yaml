@@ -48,4 +48,4 @@ jobs:
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git tag release/${{ steps.get_version.outputs.VERSION }}
-        git push origin test/${{ steps.get_version.outputs.VERSION }}
+        git push origin release/${{ steps.get_version.outputs.VERSION }}
