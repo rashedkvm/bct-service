@@ -40,14 +40,12 @@ jobs:
       id: get_version
       run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
     - uses: actions/checkout@v4
-    - name: Additional tag
-      id: additional_tag
+
+    - name: Create and push new tag
       env:
-        GITHUB_TOKEN: ${{ secrets.TAGGING }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        set -o errexit
-        set -o nounset
-        set -o pipefail
-        
-        git tag test/${{ steps.get_version.outputs.VERSION }}
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git tag release/${{ steps.get_version.outputs.VERSION }}
         git push origin test/${{ steps.get_version.outputs.VERSION }}
