@@ -27,6 +27,7 @@ endif
 
 # Suppress kapp prompts with KAPP_ARGS="--yes"
 KAPP_ARGS ?= "--yes=false"
+CF_ROUTE ?= "bct-svc.apps.tas.zcf615437.shepherd.lease"
 
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
@@ -96,3 +97,8 @@ deploy: test ## Deploy bct-service to the K8s cluster specified in ~/.kube/confi
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KAPP) delete -a bct-service -n kube-system $(KAPP_ARGS)
+
+.PHONY: cf-push
+cf-push: test ## deploys bct=service to cloud-foundry space
+	ytt -f cf/template.yml -v route=$(CF_ROUTE) > /tmp/bct-svc-mnfst.yml
+	cf push bct-svc -f /tmp/bct-svc-mnfst.yml

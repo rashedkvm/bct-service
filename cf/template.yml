@@ -1,0 +1,23 @@
+#@ load("@ytt:data", "data")
+---
+applications:
+- name: bct-svc
+  lifecycle: buildpack
+  stack: cflinuxfs4
+  env:
+    GOVERSION: 1.23
+    GO_INSTALL_PACKAGE_SPEC: github.com/rashedkvm/bct-service/cmd
+  buildpacks:
+    - go_buildpack
+  routes:
+  - route: #@ data.values.route
+    protocol: http1
+    options: {}
+  processes:
+  - type: web
+    instances: 1
+    memory: 1024M
+    disk_quota: 1024M
+    log-rate-limit-per-second: 16K
+    health-check-type: port
+    readiness-health-check-type: process
