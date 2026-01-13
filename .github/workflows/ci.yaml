@@ -3,11 +3,9 @@ name: CI
 on:
   push:
     branches:
-      - main
-      - '!dependabot/**'
     tags:
       - '**'
-  pull_request: []
+  pull_request:
 
 permissions:
   contents: write
